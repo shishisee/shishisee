@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>별과 우주 3D 관측소</title>
+<meta name="description" content="중학교 1학년 과학 '별과 우주' — 일주 운동, 연주 운동과 황도 12궁, 달의 위상을 우주와 지상 두 시점으로 함께 보는 3D 관측소" />
+<meta name="theme-color" content="#04060d" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2304060d'/%3E%3Cpath d='M32 10l5 17 17 5-17 5-5 17-5-17-17-5 17-5z' fill='%23ffd27a'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" />
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">✦</span><b>별과 우주</b><span class="brand-sub">3D 관측소</span></div>
+  <nav id="tabs" class="tabs" aria-label="단원"></nav>
+  <button id="cardBtn" class="card-btn" type="button">📘 개념 보기</button>
+</header>
+<main class="stage">
+  <div class="panes">
+    <canvas id="gl"></canvas>
+    <section class="pane" id="paneA"><div class="pane-title" id="titleA"></div><div class="tools" id="toolsA"></div></section>
+    <section class="pane" id="paneB">
+      <div class="pane-title" id="titleB"></div>
+      <div class="tools" id="toolsB"></div>
+      <div class="readout" id="readout"></div>
+      <div class="inset" id="inset"><div class="inset-view"></div><div class="inset-cap">지구에서 본 달 (확대)</div></div>
+      <div class="hint">끌어서 둘러보기 · 휠로 확대</div>
+    </section>
+  </div>
+  <aside class="card" id="card">
+    <button class="card-close" id="cardClose" type="button" aria-label="닫기">✕</button>
+    <div id="cardBody"></div>
+  </aside>
+</main>
+<footer class="controls" id="controls"></footer>
+
+<div class="intro" id="intro">
+  <div class="intro-in">
+    <div class="intro-kicker">중학교 1학년 과학 · Ⅷ. 별과 우주</div>
+    <h1>지구가 돌면,<br/><em>하늘이 돈다</em></h1>
+    <p>우주 밖에서 본 <b>실제 운동</b>과 지구에서 올려다본 <b>겉보기 운동</b>을 나란히 놓고 비교해 봐요.</p>
+    <div class="intro-grid">
+      <button data-go="diurnal" type="button"><span>01</span><b>일주 운동</b><small>지구의 자전 → 별과 태양이 동에서 서로</small></button>
+      <button data-go="annual" type="button"><span>02</span><b>연주 운동 · 황도 12궁</b><small>지구의 공전 → 태양이 별자리 사이를 이동</small></button>
+      <button data-go="moon" type="button"><span>03</span><b>달의 위상</b><small>달의 공전 → 초승달에서 보름달까지</small></button>
+      <button data-go="free" type="button"><span>04</span><b>자유 관측</b><small>지금 서울의 진짜 밤하늘</small></button>
+    </div>
+  </div>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
