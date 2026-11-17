@@ -4,7 +4,9 @@ import { glowTexture } from './sky';
 const loader = new THREE.TextureLoader();
 const base = import.meta.env.BASE_URL;
 const tex = (f: string, srgb = true) => {
-  const t = loader.load(base + 'tex/' + f);
+  // offline single-file build embeds textures as data URIs in window.__TEX
+  const embedded = (window as unknown as { __TEX?: Record<string, string> }).__TEX?.[f];
+  const t = loader.load(embedded ?? base + 'tex/' + f);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
   return t;
