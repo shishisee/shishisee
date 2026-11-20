@@ -127,6 +127,30 @@ p{margin:0}
 .blk-h{font-family:var(--chalk-f); font-size:1.75rem; display:flex; align-items:center; gap:10px}
 .glyph{display:inline-grid; place-items:center; width:34px; height:34px; border-radius:50%; border:2px solid var(--sc); color:var(--sc); font-size:1.15rem; flex:none}
 .prose{max-width:72ch}
+/* 줄바꿈: 뜻 덩어리 유지, 한 단어만 다음 줄로 떨어지지 않게 */
+.prose p,.prose li,.lines p,.try,.concl p{text-wrap:pretty}
+.mystery p,.lines p,.concl p{text-wrap:balance}
+.nw{white-space:nowrap}
+.mystery p+p,.lines p+p,.concl p+p{margin-top:.35em}
+/* 카드 넘기기 · 걷는 친구들 */
+.cardtabs{display:flex; flex-wrap:wrap; gap:6px}
+.ctab{font:inherit; font-family:var(--chalk-f); font-size:1.15rem; cursor:pointer; padding:4px 14px; border-radius:20px; border:1.5px solid var(--line); background:transparent; color:var(--muted)}
+.ctab b{font-family:var(--mono-f); font-size:.85rem; margin-right:2px}
+.ctab.on{border-color:var(--sc); color:var(--board); background:var(--sc)}
+.cardbody{display:grid; gap:12px; min-width:0}
+.card-h{font-family:var(--chalk-f); font-size:1.6rem; color:var(--sc)}
+.lines{font-size:1.05rem}
+.walk{display:grid; gap:12px; min-width:0}
+.walk-btns .big-step{font-family:var(--chalk-f); font-size:1.35rem; padding:8px 22px}
+.tbl-wrap{overflow-x:auto}
+.walk-tbl{border-collapse:collapse; font-family:var(--mono-f); font-size:.9rem; font-variant-numeric:tabular-nums; min-width:100%}
+.walk-tbl th,.walk-tbl td{padding:4px 12px; text-align:right; border-bottom:1px dashed var(--line); white-space:nowrap}
+.walk-tbl th{font-family:var(--body-f); font-weight:700; font-size:.82rem}
+.walk-tbl .p{color:var(--pink)} .walk-tbl .b{color:var(--sky)}
+.walk-tbl tr:last-child td{font-weight:600; background:var(--grid)}
+.concl{border:2px dashed var(--green); border-radius:8px; padding:12px 16px; background:var(--green-fill); font-size:1.02rem; animation:chalkin .4s ease}
+.concl b{color:var(--green)}
+.cardnav{justify-content:space-between; border-top:1px dashed var(--line); padding-top:12px}
 .prose p+p{margin-top:.7em}
 .prose b{color:var(--yellow); font-weight:700}
 .mystery{font-size:1.08rem; border-left:3px solid var(--sc); padding-left:16px}

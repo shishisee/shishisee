@@ -172,7 +172,103 @@ const Q = (() => {
   const integrate = (f, a, b, n = 400) => { const h = (b - a) / n; let s = f(a) + f(b); for (let i = 1; i < n; i++) s += f(a + i * h) * (i % 2 ? 4 : 2); return s * h / 3; };
   const deriv = (f, x, h = 1e-5) => (f(x + h) - f(x - h)) / (2 * h);
 
-  return { el, plot, ctrls, slider, button, select, readout, note, anim, onCleanup, cleanup, colors, fact, comb, randn, normPdf, Phi, f2, integrate, deriv, niceStep };
+
+  /* 귀여운 분필 친구 (발 위치 px, py 기준) */
+  function critter(ctx, px, py, o = {}) {
+    const r = o.r || 15, col = o.color, t = o.t || 0, dir = o.dir || 1, walk = o.walking ? 1 : 0;
+    const bob = Math.abs(Math.sin(t * 9)) * 3 * walk, lg = Math.sin(t * 18) * 4 * walk;
+    ctx.save(); ctx.translate(px, py);
+    ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-r * .4, -r * .5); ctx.lineTo(-r * .45 + lg, 0); ctx.moveTo(r * .4, -r * .5); ctx.lineTo(r * .45 - lg, 0); ctx.stroke();
+    ctx.translate(0, -r * 1.05 - bob);
+    ctx.beginPath(); ctx.moveTo(-r * .3, -r * .8); ctx.quadraticCurveTo(-r * .5, -r * 1.5, -r * .2, -r * 1.55); ctx.moveTo(r * .3, -r * .8); ctx.quadraticCurveTo(r * .5, -r * 1.5, r * .2, -r * 1.55); ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = col; [[-r * .2, -r * 1.55], [r * .2, -r * 1.55]].forEach(([a, b]) => { ctx.beginPath(); ctx.arc(a, b, 3, 0, 7); ctx.fill(); });
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * .92, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff'; [-.36, .36].forEach(e => { ctx.beginPath(); ctx.arc(e * r + dir * r * .1, -r * .12, r * .27, 0, 7); ctx.fill(); });
+    ctx.fillStyle = '#222'; [-.36, .36].forEach(e => { ctx.beginPath(); ctx.arc(e * r + dir * r * .2, -r * .08, r * .13, 0, 7); ctx.fill(); });
+    ctx.fillStyle = 'rgba(255,110,140,.6)'; [-.6, .6].forEach(e => { ctx.beginPath(); ctx.ellipse(e * r, r * .28, r * .17, r * .1, 0, 0, 7); ctx.fill(); });
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 1.8; ctx.beginPath();
+    if (o.mood === 'wow') { ctx.arc(dir * r * .08, r * .32, r * .13, 0, 7); } else ctx.arc(dir * r * .08, r * .22, r * .2, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke(); ctx.restore();
+  }
+  /* 말풍선: 꼬리 끝이 (px, py) */
+  function bubble(ctx, px, py, lines, o = {}) {
+    const c = colors(); ctx.save(); ctx.font = `600 ${o.size || 14}px "IBM Plex Mono", "Gowun Batang", monospace`;
+    const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 18, lh = (o.size || 14) * 1.35, h = lines.length * lh + 10;
+    let x = o.align === 'left' ? px - w + 22 : o.align === 'right' ? px - 22 : px - w / 2; const W = ctx.canvas.width / (window.devicePixelRatio || 1); x = Math.max(4, Math.min(W - w - 4, x));
+    const y = Math.max(3, py - 10 - h); if (py - y - h < 6) py = y + h + 6;
+    ctx.fillStyle = c.panel; ctx.strokeStyle = o.color || c.chalk; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px - 6, y + h); ctx.lineTo(px, py - 2); ctx.lineTo(px + 6, y + h); ctx.fillStyle = c.panel; ctx.fill(); ctx.stroke();
+    ctx.fillRect(px - 5, y + h - 2.5, 10, 4);
+    ctx.fillStyle = o.color || c.chalk; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    lines.forEach((l, i) => ctx.fillText(l, x + 9, y + 6 + i * lh)); ctx.restore();
+  }
+  const nice = v => { if (!isFinite(v)) return '∞'; const a = Math.abs(v); if (a >= 1e5) return Math.round(v).toLocaleString(); return String(+v.toFixed(a < 0.01 && a > 0 ? 6 : 4)); };
+
+  /* 걸어서 다가가기 카드: 친구들이 x = a를 향해 한 걸음씩 */
+  function walker(host, cfg) {
+    const box = el('div', { class: 'walk' }); host.append(box);
+    let li = 0, ri = 0, t = 0, alt = false;
+    const L = cfg.left || [], R = cfg.right || [], lastL = Math.max(0, L.length - 1), lastR = Math.max(0, R.length - 1);
+    const st = { lx: L[0] ?? 0, rx: R[0] ?? 0, tlx: L[0] ?? 0, trx: R[0] ?? 0 };
+    const curV = () => cfg.view({ lx: st.tlx, rx: st.trx, li, ri });
+    let V = curV().slice();
+    const P = plot(box, { aspect: cfg.aspect || ((host.clientWidth || 600) < 520 ? 1.0 : 0.6), maxH: 460, label: cfg.label, draw: P => {
+      const c = P.c, ctx = P.ctx; [P.xmin, P.xmax, P.ymin, P.ymax] = V; P.grid(cfg.grid || {});
+      if (cfg.a !== undefined) P.vline(cfg.a, c.muted, [5, 5], 1.2);
+      (cfg.draw || (P => P.fn(cfg.f, c.b, 3)))(P, c, alt);
+      if (cfg.axisLabels) { P.text(P.xmax, 0, cfg.axisLabels[0], c.muted, 'right', -6, -6, 13); P.text(P.xmin, P.ymax, cfg.axisLabels[1], c.muted, 'left', 8, 20, 13); }
+      const walking = Math.abs(st.lx - st.tlx) + Math.abs(st.rx - st.trx) > 1e-9;
+      const done = li === lastL && ri === lastR;
+      const who = [[L, st.lx, li, c.p, 1, cfg.sayL, 'left'], [R, st.rx, ri, c.b, -1, cfg.sayR, 'right']].filter(w => w[0].length)
+        .map(w => ({ w, x: w[1], y: cfg.f(w[1]), px: P.X(w[1]) }));
+      if (who.length === 2) { const [a, b] = who, gap = 26; if (b.px - a.px < 2 * gap) { const m = (a.px + b.px) / 2; a.px = Math.min(a.px, m - gap); b.px = Math.max(b.px, m + gap); } }
+      who.forEach(({ w: [arr, x, i, col, dir, say, side], y, px }) => {
+        const py = Math.min(P.h - 4, Math.max(60, P.Y(y)));
+        P.dot(x, y, col, 4);
+        critter(ctx, px, py - 2, { color: col, t, dir, walking, mood: done ? 'wow' : '' });
+        bubble(ctx, px, py - 48, done && say && !walking ? [say] : [`x = ${nice(arr[i])}`, `f = ${nice(cfg.f(arr[i]))}`], { color: col, size: P.w < 480 ? 12 : 14, align: who.length === 2 ? side : '' });
+      });
+    } });
+    const A = anim(dt => { t += dt; const k = Math.min(1, dt * 5); st.lx += (st.tlx - st.lx) * k; st.rx += (st.trx - st.rx) * k; const T = curV(); V = V.map((v, i) => v + (T[i] - v) * k);
+      if (Math.abs(st.lx - st.tlx) < 1e-12 * (1 + Math.abs(st.tlx))) st.lx = st.tlx; if (Math.abs(st.rx - st.trx) < 1e-12 * (1 + Math.abs(st.trx))) st.rx = st.trx;
+      P.redraw(); if (Math.abs(st.lx - st.tlx) + Math.abs(st.rx - st.trx) < 1e-14 && V.every((v, i) => Math.abs(v - T[i]) < 1e-9 * (1 + Math.abs(T[i])))) { V = T; P.redraw(); return false; } });
+    const row = el('div', { class: 'row walk-btns' }); box.append(row);
+    const tbl = el('table', { class: 'walk-tbl' });
+    const head = el('tr', {}); if (L.length) head.append(el('th', { class: 'p' }, '왼쪽 친구 x'), el('th', { class: 'p' }, 'f(x)')); if (R.length) head.append(el('th', { class: 'b' }, '오른쪽 친구 x'), el('th', { class: 'b' }, 'f(x)'));
+    tbl.append(head); box.append(el('div', { class: 'tbl-wrap' }, tbl));
+    const concl = el('div', { class: 'concl', html: cfg.conclusion || '' }); concl.hidden = true; box.append(concl);
+    const addRow = () => { const tr = el('tr', {}); if (L.length) tr.append(el('td', {}, nice(L[li])), el('td', { class: 'p' }, nice(cfg.f(L[li])))); if (R.length) tr.append(el('td', {}, nice(R[ri])), el('td', { class: 'b' }, nice(cfg.f(R[ri])))); tbl.append(tr); };
+    const step = () => { if (li < lastL) li++; if (ri < lastR) ri++; st.tlx = L[li] ?? 0; st.trx = R[ri] ?? 0; addRow(); if (li === lastL && ri === lastR) { nb.disabled = true; nb.textContent = '도착!'; concl.hidden = false; if (window.MathJax?.typesetPromise) MathJax.typesetPromise([concl]); } A.start(); };
+    const nb = button(row, '한 걸음 더 ▶', step, 'primary big-step');
+    button(row, '처음부터', () => { li = ri = 0; st.tlx = st.lx = L[0] ?? 0; st.trx = st.rx = R[0] ?? 0; tbl.innerHTML = ''; tbl.append(head); addRow(); nb.disabled = false; nb.textContent = '한 걸음 더 ▶'; concl.hidden = true; V = curV().slice(); P.redraw(); });
+    if (cfg.altLabel) { const ab = button(row, cfg.altLabel, () => { alt = !alt; ab.classList.toggle('on', alt); P.redraw(); }); }
+    addRow(); requestAnimationFrame(() => A.start());
+    return P;
+  }
+
+  /* 카드 넘기기: 한 장에 개념 하나 */
+  function cards(host, list) {
+    const tabs = el('div', { class: 'cardtabs', role: 'tablist' }), body = el('div', { class: 'cardbody' }), nav = el('div', { class: 'row cardnav' });
+    host.append(tabs, body, nav); let cur = -1, local = [];
+    const show = i => {
+      local.forEach(f => { try { f(); } catch (e) {} }); local = [];
+      const before = cleanups.length; cur = i; body.innerHTML = '';
+      tabs.querySelectorAll('button').forEach((b, j) => { b.classList.toggle('on', j === i); b.setAttribute('aria-selected', j === i); });
+      const C = list[i]; body.append(el('h3', { class: 'card-h' }, `${i + 1}. ${C.title}`), el('div', { class: 'lines', html: C.text }));
+      C.build(body); local = cleanups.splice(before);
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise([body]).catch(() => {});
+      prev.disabled = i === 0; next.textContent = i === list.length - 1 ? '카드 끝 · 아래로 ↓' : '다음 카드 →';
+    };
+    list.forEach((C, i) => tabs.append(el('button', { type: 'button', role: 'tab', class: 'ctab', onclick: () => show(i) }, el('b', {}, String(i + 1)), ' ' + C.tab)));
+    const prev = button(nav, '← 이전 카드', () => cur > 0 && show(cur - 1));
+    const next = button(nav, '다음 카드 →', () => { if (cur < list.length - 1) { show(cur + 1); tabs.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }, 'primary');
+    onCleanup(() => local.forEach(f => { try { f(); } catch (e) {} }));
+    show(0);
+  }
+
+  return { critter, bubble, walker, cards, nice, el, plot, ctrls, slider, button, select, readout, note, anim, onCleanup, cleanup, colors, fact, comb, randn, normPdf, Phi, f2, integrate, deriv, niceStep };
 })();
 
 /* 단원 등록소 */

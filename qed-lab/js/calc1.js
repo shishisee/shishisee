@@ -7,44 +7,43 @@ QED.subject({
 
   { id: 'c1-limit', title: '함수의 극한', who: '오귀스탱 루이 코시', year: '1821',
     card: T`$x$가 $a$에 한없이 가까워질 때 $f(x)$가 $L$에 한없이 가까워지면 $\displaystyle\lim_{x\to a}f(x)=L$`,
-    mystery: T`<p>$f(x)=\dfrac{x^2-1}{x-1}$에 $x=1$을 넣으면 $\dfrac00$이 돼. 계산이 안 되니까 함숫값은 <b>없어</b>.</p><p>그런데 $x=0.9,\ 0.99,\ 0.999$처럼 1에 점점 가까운 수를 넣으면 이상한 일이 생겨. 값이 어떤 수로 몰려가거든. 코시는 이 "몰려가는 값"에 이름을 붙였어. 도착하지 못하는 곳의 값을 어떻게 알 수 있을까?</p>`,
-    try: '거리 슬라이더를 왼쪽 끝까지 밀어서 두 개미를 1 쪽으로 보내 봐. 그다음 현미경을 켜고 함수를 바꿔 가며 비교해.',
+    mystery: T`<p>$f(x)=\dfrac{x^2-1}{x-1}$에 $x=1$을 넣으면 $\dfrac00$이 돼.</p><p>계산이 안 되니까 <b>$f(1)$은 없어.</b></p><p>그런데 1에 아주 가까운 수를 넣으면 값이 <b>한 곳으로 몰려가.</b></p><p>도착할 수 없는 곳의 값을 알아내는 방법, 그게 오늘 배울 <b>극한</b>이야.</p>`,
+    try: '카드를 한 장씩 넘기면서 <b>한 걸음 더</b> 버튼만 눌러 봐. 두 친구가 x = a를 향해 걸어가고, 머리 위 말풍선에 지금 위치의 값이 떠.',
     sim(h, Q) {
-      const fs = [
-        { n: '(x²−1)/(x−1) · 구멍', f: x => Math.abs(x - 1) < 1e-13 ? NaN : (x * x - 1) / (x - 1) },
-        { n: '좌우가 다른 함수 · 끊김', f: x => x < 1 ? x + 1 : (x - 1) ** 2 + 0.5 },
-        { n: '1/(x−1)² · 발산', f: x => 1 / (x - 1) ** 2 }];
-      let k = 0, d = 1, zoom = false; const out = Q.readout(document.createElement('div'));
-      const P = Q.plot(h, { draw: P => {
-        const f = fs[k].f, c = P.c;
-        if (zoom) { const w = Math.max(d * 3, 0.003); if (k === 2) P.xmin = 1 - w, P.xmax = 1 + w, P.ymin = 0, P.ymax = f(1 + d) * 1.4; else { const cy = (f(1 - d) + f(1 + d)) / 2, hy = Math.max(w * 2.2, Math.abs(f(1 + d) - f(1 - d)) * 0.9); P.xmin = 1 - w; P.xmax = 1 + w; P.ymin = cy - hy; P.ymax = cy + hy; } }
-        else { P.xmin = -1; P.xmax = 3; P.ymin = -1; P.ymax = k === 2 ? 12 : 4; }
-        P.grid(); P.vline(1, c.muted);
-        if (k === 1) { P.fn(f, c.b, 2.5, P.xmin, Math.min(1, P.xmax) - 1e-9); P.fn(f, c.b, 2.5, Math.max(1, P.xmin), P.xmax); P.dot(1, 2, c.b, 5, true); P.dot(1, 0.5, c.b, 5); }
-        else { P.fn(f, c.b, 2.5, P.xmin, 1 - 1e-9); P.fn(f, c.b, 2.5, 1 + 1e-9, P.xmax); if (k === 0) P.dot(1, 2, c.b, 6, true); }
-        const L = f(1 - d), R = f(1 + d);
-        [[1 - d, L, c.p], [1 + d, R, c.y]].forEach(([x, y, col]) => { if (y < P.ymax) { P.seg(x, P.ymin, x, y, col, 1.2, [4, 4]); P.seg(x, y, 1, y, col, 1.2, [2, 4]); P.dot(x, y, col, 6); } });
-        const msg = [`양쪽 다 <span class="g">2</span>로 몰려가. 극한값은 2야. f(1)은 정의도 안 되는데 극한은 존재해.`,
-          `왼쪽 개미는 <span class="p">2</span>, 오른쪽 개미는 <span class="y">0.5</span>로 가. 좌극한 ≠ 우극한이니까 극한은 존재하지 않아.`,
-          `양쪽 다 한없이 커져. 양의 무한대로 <span class="r">발산</span>해: lim = ∞`][k];
-        out.innerHTML = `<span class="p">왼쪽 개미 x = ${(1 - d).toFixed(5)} → f(x) = ${L.toFixed(5)}</span><br><span class="y">오른쪽 개미 x = ${(1 + d).toFixed(5)} → f(x) = ${R.toFixed(5)}</span><br>${d < 0.01 ? msg : '더 가까이 가 봐…'}`;
-      } });
-      const c = Q.ctrls(h);
-      Q.select(c, '함수', fs.map(f => f.n), v => { k = v; P.redraw(); });
-      Q.slider(c, { label: 'x와 1 사이 거리', min: -3, max: 0, step: 0.01, value: 0, fmt: v => (10 ** v).toPrecision(2) }, v => { d = 10 ** v; P.redraw(); });
-      const zb = Q.button(c, '현미경 확대', () => { zoom = !zoom; zb.classList.toggle('on', zoom); P.redraw(); });
-      h.append(out);
+      const fx = x => (x * x - 1) / (x - 1), sx = x => Math.sign(x);
+      Q.cards(h, [
+        { tab: '온도', title: '몸풀기: 섭씨와 화씨', text: T`<p>섭씨 $x$℃를 화씨로 바꾸면 $f(x)=1.8x+32$ ℉야.</p><p>섭씨가 <b>0℃에 가까워지면</b> 화씨는 몇 ℉에 가까워질까?</p>`,
+          build: b => Q.walker(b, { f: x => 1.8 * x + 32, a: 0, left: [-5, -1, -0.1, -0.01, -0.001], right: [5, 1, 0.1, 0.01, 0.001], view: () => [-6.5, 6.5, 18, 46], axisLabels: ['섭씨 ℃', '화씨 ℉'], sayL: '32℉ 근처!', sayR: '나도 32℉!',
+            conclusion: T`<p>양쪽에서 다가가도 <b>32℉</b>로 모여.</p><p>이렇게 쓰고 "리미트"라고 읽어: $\displaystyle\lim_{x\to0}(1.8x+32)=32$</p>` }) },
+        { tab: '구멍', title: '구멍 난 그래프', text: T`<p>$\dfrac{x^2-1}{x-1}$은 $x\ne1$이면 약분해서 $x+1$과 똑같아.</p><p>그래서 그래프는 직선인데, <b>$x=1$ 자리에만 구멍(○)</b>이 뚫려 있어.</p><p>두 친구가 구멍을 향해 걸어가면 높이는 어떻게 될까?</p>`,
+          build: b => Q.walker(b, { f: fx, a: 1, left: [0, 0.9, 0.99, 0.999, 0.9999], right: [2, 1.1, 1.01, 1.001, 1.0001], view: () => [-0.6, 2.6, -0.4, 3.6], sayL: '2에 가까워!', sayR: '나도 2!', altLabel: '구멍 메운 x+1과 비교',
+            draw: (P, c, alt) => { P.fn(x => x + 1, c.b, 3); if (alt) { P.dot(1, 2, c.g, 7); P.text(1, 2, 'x+1이면 f(1) = 2', c.g, 'center', 0, 30, 13); } else { P.dot(1, 2, c.board, 7); P.dot(1, 2, c.r, 7, true); P.text(1, 2, '구멍: f(1) 없음', c.r, 'center', 0, 30, 13); } },
+            conclusion: T`<p>양쪽 친구 모두 높이 <b>2</b>로 모여: $\displaystyle\lim_{x\to1}\frac{x^2-1}{x-1}=2$</p><p>$f(1)$은 없는데도 극한값은 있어.</p><p>극한은 <span class="nw">"그 점에 도착"</span>이 아니라 <b class="nw">"그 점 근처로 다가가기"</b>에 관한 이야기야.</p>` }) },
+        { tab: '끝없이 멀리', title: '끝없이 멀리 가면 (x → ∞)', text: T`<p>이번엔 오른쪽 친구가 $y=\dfrac1x$ 위를 <b>끝없이 오른쪽으로</b> 걸어가.</p><p>$x$가 10, 100, 1000…으로 커지면 높이는?</p>`,
+          build: b => Q.walker(b, { f: x => 1 / x, right: [1, 10, 100, 1000, 10000, 100000], view: s => [-s.rx * 0.08, s.rx * 1.3, -0.25, 1.25], sayR: '바닥(0)에 붙을 것 같아…', grid: { labels: true },
+            draw: (P, c) => P.fn(x => 1 / x, c.b, 3, 1e-9, P.xmax),
+            conclusion: T`<p>높이는 <b>0</b>에 한없이 가까워져: $\displaystyle\lim_{x\to\infty}\frac1x=0$</p><p>$\infty$(무한대)는 수가 아니야. <b>한없이 커지는 상태</b>를 나타내는 기호야.</p>` }) },
+        { tab: '하늘로', title: '하늘로 날아가면 (발산)', text: T`<p>$y=\dfrac1{x^2}$에서 두 친구가 $x=0$을 향해 걸어가.</p><p>0에 가까워질수록 높이는 어떻게 될까?</p>`,
+          build: b => Q.walker(b, { f: x => 1 / (x * x), a: 0, left: [-1, -0.5, -0.2, -0.1, -0.03], right: [1, 0.5, 0.2, 0.1, 0.03], view: s => { const y = 1 / (s.rx * s.rx); return [-1.4, 1.4, -0.08 * y * 1.4, y * 1.45]; }, sayL: '끝이 없어~!', sayR: '계속 올라가!',
+            draw: (P, c) => { P.fn(x => 1 / (x * x), c.b, 3, P.xmin, -1e-9); P.fn(x => 1 / (x * x), c.b, 3, 1e-9, P.xmax); },
+            conclusion: T`<p>한 곳으로 모이지 않고 <b>한없이 커져.</b> 이걸 <b>발산</b>이라고 해.</p><p>$\displaystyle\lim_{x\to0}\frac1{x^2}=\infty$라고 쓰지만, 극한값이 있다는 뜻이 아니야. 극한값은 <b>없어.</b></p>` }) },
+        { tab: '계단', title: '왼쪽과 오른쪽이 다르면', text: T`<p>스위치를 켜면 0에서 1로 확 바뀌는 <b>계단 함수</b>야.</p><p>$x<0$이면 $f(x)=0$이고, $x\ge0$이면 $f(x)=1$이야.</p><p>양쪽에서 0으로 다가가면?</p>`,
+          build: b => Q.walker(b, { f: x => x >= 0 ? 1 : 0, a: 0, left: [-1, -0.1, -0.01, -0.001], right: [1, 0.1, 0.01, 0.001], view: () => [-1.4, 1.4, -0.5, 1.9], sayL: '나는 0이야!', sayR: '아니, 1이야!',
+            draw: (P, c) => { P.seg(P.xmin, 0, 0, 0, c.b, 3); P.seg(0, 1, P.xmax, 1, c.b, 3); P.dot(0, 0, c.b, 6, true); P.dot(0, 1, c.b, 6); },
+            conclusion: T`<p>왼쪽에서 다가간 값 <b>좌극한</b>은 $\displaystyle\lim_{x\to0-}f(x)=0$이야.</p><p>오른쪽에서 다가간 값 <b>우극한</b>은 $\displaystyle\lim_{x\to0+}f(x)=1$이야.</p><p>둘이 <b>다르니까</b> $\displaystyle\lim_{x\to0}f(x)$는 존재하지 않아.</p>` }) }
+      ]);
     },
     guess: { q: T`$x\to1$일 때 $\dfrac{x^2-1}{x-1}$은 어떻게 될까?`, opts: ['$x=1$에서 정의가 안 되니까 극한도 없다', '2에 한없이 가까워진다', '0에 가까워진다', '1에 가까워진다'], ans: 1,
-      why: T`$x\ne1$이면 $\dfrac{(x-1)(x+1)}{x-1}=x+1$이야. 극한은 $x=1$ <b>근처</b>에서 일어나는 일만 보니까 $x+1\to2$. 극한은 "도착"이 아니라 "접근"에 관한 개념이야.` },
-    theorem: T`<h4>정의 · 함수의 극한</h4><p>$x$가 $a$가 아니면서 $a$에 한없이 가까워질 때 $f(x)$가 일정한 값 $L$에 한없이 가까워지면, $f(x)$는 $L$에 <b>수렴</b>한다고 하고 이렇게 써.</p>$$\lim_{x\to a}f(x)=L$$<p><b>좌극한·우극한</b> $\displaystyle\lim_{x\to a-}f(x)$는 왼쪽에서, $\displaystyle\lim_{x\to a+}f(x)$는 오른쪽에서 접근할 때의 값이야.</p><p>$$\lim_{x\to a}f(x)=L \iff \lim_{x\to a-}f(x)=\lim_{x\to a+}f(x)=L$$</p>`,
-    proof: [T`$x\to1$이면 $x\ne1$이니까 $x-1\ne0$이야. 그래서 약분할 수 있어.`, T`$\dfrac{x^2-1}{x-1}=\dfrac{(x-1)(x+1)}{x-1}=x+1\quad(x\ne1)$`, T`$x+1$은 $x\to1$일 때 $2$에 한없이 가까워진다.`, T`따라서 $\displaystyle\lim_{x\to1}\frac{x^2-1}{x-1}=2$. 함숫값 $f(1)$과는 상관이 없어.`],
-    deeper: T`<p>극한값과 함숫값은 다른 개념이야. 함숫값이 없어도 극한값은 있을 수 있고(구멍), 함숫값이 있어도 극한값은 없을 수 있어(끊김). 둘이 같을 때를 따로 <b>연속</b>이라고 불러. 바로 다음다음 연구실 주제야.</p>`,
-    exam: [T`그래프를 주고 $\displaystyle\lim_{x\to a-}f(x)+\lim_{x\to b+}f(x)$를 묻는 2점 문제. 열린 점(○)과 닫힌 점(●)을 헷갈리지 마.`, T`구간별 함수에서 "극한값이 존재하도록 하는 $a$": 좌극한 = 우극한으로 방정식을 세워.`, T`$|x-a|$가 들어간 식: $x\to a+$와 $x\to a-$에서 부호를 따로 나눠.`],
+      why: T`약분하면 $x+1$이니까 2로 다가가. 극한은 $x=1$ <b>근처</b>만 보니까 $f(1)$이 없어도 괜찮아.` },
+    theorem: T`<h4>수렴과 극한값</h4><p>$x$가 $a$가 아니면서 $a$에 한없이 가까워질 때 $f(x)$가 일정한 수 $L$에 한없이 가까워지면, $f(x)$는 $L$에 <b>수렴</b>한다고 해.</p>$$\lim_{x\to a}f(x)=L$$<p>$x\to\infty$, $x\to-\infty$일 때도 같은 방식으로 써.</p><h4>발산</h4><p>수렴하지 않으면 <b>발산</b>해. 한없이 커지면 $\lim f(x)=\infty$라고 써.</p><h4>좌극한과 우극한</h4><p>$x\to a-$는 왼쪽에서, $x\to a+$는 오른쪽에서 다가가는 거야.</p>$$\lim_{x\to a}f(x)=L \iff \lim_{x\to a-}f(x)=\lim_{x\to a+}f(x)=L$$`,
+    proof: [T`$x\to1$이면 $x\ne1$이니까 $x-1\ne0$이야. 그래서 약분할 수 있어.`, T`$\dfrac{x^2-1}{x-1}=\dfrac{(x-1)(x+1)}{x-1}=x+1\quad(x\ne1)$`, T`$x+1$은 $x\to1$일 때 $2$에 한없이 가까워진다.`, T`따라서 $\displaystyle\lim_{x\to1}\frac{x^2-1}{x-1}=2$. $f(1)$이 없다는 사실과는 상관없어.`],
+    deeper: T`<p>극한값과 함숫값은 다른 개념이야.</p><p>함숫값이 없어도 극한값은 있을 수 있어(구멍).</p><p>함숫값이 있어도 극한값은 없을 수 있어(계단).</p><p>둘이 같을 때를 <b>연속</b>이라고 불러. 다음다음 연구실 주제야.</p>`,
+    exam: [T`그래프를 주고 $\displaystyle\lim_{x\to a-}f(x)+\lim_{x\to b+}f(x)$를 묻는 2점 문제. 열린 점(○)과 닫힌 점(●)을 헷갈리지 마.`, T`구간별 함수에서 "극한값이 존재하도록 하는 $a$": 좌극한 = 우극한으로 방정식을 세워.`, T`$|x-a|$가 들어간 식은 $x\to a+$와 $x\to a-$로 나눠서 부호를 정해.`],
     probs: [
       { lv: 2, q: T`$\displaystyle\lim_{x\to2}\frac{x^2-4}{x-2}$의 값을 구하시오.`, ans: 4, hints: ['분자를 인수분해해 봐.', T`$x^2-4=(x-2)(x+2)$`], sol: T`$\dfrac{(x-2)(x+2)}{x-2}=x+2\to4$` },
+      { lv: 2, q: T`$\displaystyle\lim_{x\to\infty}\left(\frac1x+1\right)$의 값을 구하시오.`, ans: 1, hints: [T`$\frac1x\to0$`], sol: T`$0+1=1$` },
       { lv: 3, q: T`함수 $f(x)=\begin{cases}x+a&(x<1)\\x^2+3&(x\ge1)\end{cases}$에 대하여 $\displaystyle\lim_{x\to1}f(x)$의 값이 존재하도록 하는 상수 $a$의 값을 구하시오.`, ans: 3, hints: ['좌극한과 우극한을 각각 구해.', T`좌극한 $=1+a$, 우극한 $=4$`], sol: T`$1+a=4$이므로 $a=3$.` },
-      { lv: 3, q: T`$\displaystyle\lim_{x\to1+}\frac{x^2-x}{|x-1|}+\lim_{x\to1-}\frac{x^2-x}{|x-1|}$의 값을 구하시오.`, ans: 0, hints: [T`분자는 $x(x-1)$이야.`, T`$x>1$이면 $|x-1|=x-1$, $x<1$이면 $|x-1|=-(x-1)$`], sol: T`우극한은 $x\to1$, 좌극한은 $-x\to-1$. 합은 $1+(-1)=0$.` }]
+      { lv: 3, q: T`$\displaystyle\lim_{x\to1+}\frac{x^2-x}{|x-1|}+\lim_{x\to1-}\frac{x^2-x}{|x-1|}$의 값을 구하시오.`, ans: 0, hints: [T`분자는 $x(x-1)$이야.`, T`$x>1$이면 $|x-1|=x-1$, $x<1$이면 $|x-1|=-(x-1)$`], sol: T`우극한은 $x\to1$, 좌극한은 $-x\to-1$. 합은 $0$.` }]
   },
 
   { id: 'c1-limitcalc', title: '극한의 계산과 샌드위치', who: '크니도스의 에우독소스', year: '기원전 4세기',
