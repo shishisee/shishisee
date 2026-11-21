@@ -26,7 +26,10 @@
   --bg:#14110F; --panel:#1E1916; --panel2:#251F1B; --ink:#EDE6DA; --muted:#A89D8E; --line:#3A302A;
   --red:#E2533F; --red-soft:#3A1C17; --gold:#D4AE57; --gold-soft:#332A17; --jade:#5BB894; --jade-soft:#17302A; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-ko);font-size:15px;line-height:1.6}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ko);font-size:15px;line-height:1.6;word-break:keep-all;overflow-wrap:break-word}
+.nw{white-space:nowrap}
+p,.mean,.note,.mn,.cm,.cek,.ek,.ms,.twm,.twk,.tk-ko,.tk-guide,.legend,.meta{text-wrap:pretty}
+.hz,.bz,.cz,.qz,.oz,.ez,.cex,.wz,.twz,.twx,.tl2,.tk-zh,.tk-ttl span,.ch b,.hjw,.chj,.wh{word-break:normal}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 .wrap{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 button{font:inherit;color:inherit}
@@ -244,9 +247,9 @@ dialog::backdrop{background:rgba(10,8,6,.6)}
   .tk-wt table,.tk-wt tbody{display:block}
   .tk-wt tr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
   .tk-wt td{border:0;padding:0;white-space:normal}
-  .tk-wt .wz{grid-row:1/5;grid-column:1}
-  .tk-wt .wp{grid-row:1;grid-column:2}.tk-wt .wk{grid-row:2;grid-column:2}.tk-wt .wh{grid-row:3;grid-column:2}.tk-wt .wm{grid-row:4;grid-column:2}
-  .tk-wt .ws{grid-row:1/5;grid-column:3}
+  .tk-wt .wz{grid-row:1/4;grid-column:1}
+  .tk-wt .wp{grid-row:1;grid-column:2}.tk-wt .wh{grid-row:2;grid-column:2}.tk-wt .wm{grid-row:3;grid-column:2}
+  .tk-wt .ws{grid-row:1/4;grid-column:3}
 }
 
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:25;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -420,7 +423,7 @@ function speak(t){if(!('speechSynthesis' in window)){toast('이 브라우저는 
 let lv=store.get('hsk-lv',0);
 function renderRanks(){
   $('#ranks').innerHTML=[1,2,3,4].map(L=>{const tot=W.filter(w=>w.lv===L).length,d=W.filter(w=>w.lv===L&&done.has(w.key)).length,pc=Math.round(d/tot*100);
-    return `<button class="rank" data-lv="${L}" aria-pressed="${lv===L}"><span class="rz">${RANK[L][0]}</span><span class="rn"><b>${L}급</b> · ${RANK[L][1]}</span><span class="bar"><i style="width:${pc}%"></i></span><span class="rc">${d} / ${tot} 습득 · ${pc}%</span></button>`}).join('');
+    return `<button class="rank" data-lv="${L}" aria-pressed="${lv===L}"><span class="rz">${RANK[L][0]}</span><span class="rn"><b>${L}급</b> · ${RANK[L][1]}</span><span class="bar"><i style="width:${pc}%"></i></span><span class="rc"><span class="nw">${d} / ${tot} 습득</span> · <span class="nw">${pc}%</span></span></button>`}).join('');
 }
 $('#ranks').addEventListener('click',e=>{const b=e.target.closest('.rank');if(!b)return;const L=+b.dataset.lv;setLv(lv===L?0:L);go('book')});
 function lvSeg(el,cur,cb){el.innerHTML=[0,1,2,3,4].map(L=>`<button data-lv="${L}" aria-pressed="${cur===L}">${L?L+'급':'전체'}</button>`).join('');el.onclick=e=>{const b=e.target.closest('button');if(!b)return;el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));cb(+b.dataset.lv)}}
@@ -430,7 +433,7 @@ function setLv(L){lv=L;store.set('hsk-lv',L);lvSeg($('#lvseg'),lv,setLv);renderR
 let filt='all',page=1;const PER=50;
 function relBadge(w){if(w.rel==='=')return '<span class="badge b-eq">= 한자어</span>';if(w.rel.startsWith('!'))return '<span class="badge b-ff">⚠ 뜻 다름</span>';return ''}
 function matchQ(w,q){if(!q)return true;const ql=q.toLowerCase(),qn=ql.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,'');
-  return w.s.includes(q)||w.t.includes(q)||w.k.includes(q)||(w.r&&w.r.includes(q))||(qn&&qn.length===ql.replace(/\s/g,'').length&&w.np.startsWith(qn))||w.h.includes(q)}
+  return w.s.includes(q)||w.t.includes(q)||w.k.includes(q)||(w.r&&w.r.includes(q))||(qn&&qn.length===ql.replace(/\s/g,'').length&&w.np.startsWith(qn))}
 function filtered(){const q=$('#q').value.trim();return W.filter(w=>(!lv||w.lv===lv)&&(filt==='all'||(filt==='todo'&&!done.has(w.key))||(filt==='eq'&&w.rel==='=')||(filt==='ff'&&w.rel.startsWith('!')))&&matchQ(w,q))}
 let cur=[];
 function renderList(){
@@ -438,7 +441,7 @@ function renderList(){
   $('#meta').textContent=`${cur.length.toLocaleString()}개 단어 · 빈도순`;
   $('#list').innerHTML=show.length?show.map(w=>`<button class="row ${done.has(w.key)?'done':''}" data-i="${w.i}">
     <span class="hz">${esc(w.s)}</span>
-    <span class="pyc"><span class="py">${esc(w.p)}</span> <span class="hg">${esc(w.h)}</span>${lv?'':`<span class="lvtag">${w.lv}급</span>`}</span>
+    <span class="pyc"><span class="py">${esc(w.p)}</span>${lv?'':`<span class="lvtag">${w.lv}급</span>`}</span>
     <span class="mn">${esc(w.k)}</span>
     <span class="hj">${esc(w.t)}<small>${esc(w.r)}</small>${relBadge(w)}</span>
     <span class="chk" aria-label="${done.has(w.key)?'외움':'안 외움'}">✓</span></button>`).join(''):`<div class="empty">"${esc($('#q').value)}"에 맞는 단어가 없어요. 다른 철자나 뜻으로 찾아보세요.</div>`;
@@ -462,7 +465,7 @@ function openDetail(i){
   const exh=esc(w.ex).split(esc(w.s)).join(`<mark>${esc(w.s)}</mark>`);
   $('#dlgin').innerHTML=`<div class="dh"><span>${w.lv}급 · ${RANK[w.lv][0]} ${RANK[w.lv][1]}</span><button class="icon" data-act="close" aria-label="닫기">✕</button></div>
   <div class="dbody">
-    <div class="big"><span class="bz">${esc(w.s)}</span><span><div class="bp">${esc(w.p)}</div><div class="bh">한글 발음 ${esc(w.h)}</div></span><button class="say" data-say="${esc(w.s)}">🔊 듣기</button></div>
+    <div class="big"><span class="bz">${esc(w.s)}</span><span><div class="bp">${esc(w.p)}</div></span><button class="say" data-say="${esc(w.s)}">🔊 듣기</button></div>
     <div class="mean">${esc(w.k)}</div>
     <div class="sect"><h3>한국 한자</h3>
       <div class="hjbox"><span class="hjw">${esc(w.t)}</span><span class="hjr">${esc(w.r)}</span>${relBadge(w)}</div>
@@ -496,7 +499,7 @@ function renderCard(){
   const w=deck[ti%deck.length];
   c.innerHTML=`<span class="corner">${(ti%deck.length)+1} / ${deck.length}</span><span class="corner r">${w.lv}급 ${RANK[w.lv][0]}</span>
   <div class="cz">${esc(w.s)}</div>
-  <div class="ans" ${shown?'':'hidden'}><div class="cp">${esc(w.p)} · ${esc(w.h)}</div><div class="cm">${esc(w.k)}</div><div class="chj">${esc(w.t)} ${esc(w.r)} — ${w.c.map(x=>esc(x[1]+' '+x[2])).join(', ')}</div><div class="cex">${esc(w.ex)}</div><div class="cek">${esc(w.ek)}</div></div>
+  <div class="ans" ${shown?'':'hidden'}><div class="cp">${esc(w.p)}</div><div class="cm">${esc(w.k)}</div><div class="chj">${esc(w.t)} ${esc(w.r)} — ${w.c.map(x=>'<span class="nw">'+esc(x[1]+' '+x[2])+'</span>').join(', ')}</div><div class="cex">${esc(w.ex)}</div><div class="cek">${esc(w.ek)}</div></div>
   <div class="hint">${shown?'🔊 카드를 다시 누르면 발음을 들어요':'카드를 눌러 뜻을 확인하세요'}</div>`;
 }
 $('#tcard').addEventListener('click',()=>{if(!deck.length)return;const w=deck[ti%deck.length];if(!shown){shown=true;renderCard();speak(w.s)}else speak(w.s)});
@@ -582,7 +585,7 @@ function initTalk(D){
     return `<div class="tk-tools"><button type="button" class="btn primary" data-act="all">▶ 대화 전체 듣기</button><button type="button" class="btn" data-act="rate">속도: ${rate<1?'느리게':'보통'}</button><button type="button" class="btn" data-act="claude">Claude와 대련</button><button type="button" class="btn" data-act="done" aria-pressed="${done.has(i)}">${done.has(i)?'✓ 초식 습득':'초식 습득 표시'}</button></div>
     <div class="tk-roles">A: ${esc(r[0])} · B: ${esc(r[1])}</div><div class="tk-dlg">${d.map(line).join('')}</div>
     ${mode!=='all'?'<div class="tk-hint">흐린 말풍선을 누르면 정답이 보여요.</div>':''}
-    <div class="tk-h3">핵심 단어</div><div class="tk-wt"><table><tbody>${w.map(x=>`<tr><td class="wz">${esc(x[0])}</td><td class="wp">${esc(x[1])}</td><td class="wk">${esc(x[2])}</td><td class="wh">${esc(x[4])}<small>${esc(x[5])}</small></td><td class="wm">${esc(x[3])}</td><td class="ws"><button type="button" data-say="${esc(x[0].replace(/…/g,''))}" aria-label="단어 발음 듣기">🔊</button></td></tr>`).join('')}</tbody></table></div>`}
+    <div class="tk-h3">핵심 단어</div><div class="tk-wt"><table><tbody>${w.map(x=>`<tr><td class="wz">${esc(x[0])}</td><td class="wp">${esc(x[1])}</td><td class="wh">${esc(x[4])}<small>${esc(x[5])}</small></td><td class="wm">${esc(x[3])}</td><td class="ws"><button type="button" data-say="${esc(x[0].replace(/…/g,''))}" aria-label="단어 발음 듣기">🔊</button></td></tr>`).join('')}</tbody></table></div>`}
   function match(s,q){if(!q)return true;q=q.toLowerCase();const sp=x=>x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();const qs=sp(q);
     return [s[0],s[1],...s[3].flatMap(l=>[l[1],l[2],l[3]]),...s[4].flat()].some(x=>String(x).toLowerCase().includes(q)||sp(String(x)).includes(qs))}
   function list(){const q=$('#tk-q').value.trim();const items=D.map((s,i)=>[s,i]).filter(([s])=>(cat==='전체'||s[0]===cat)&&match(s,q));
@@ -626,22 +629,22 @@ function renderHome(){
     <h1>중국어 <em>무공도장</em></h1>
     <div class="lvl"><span class="tk">내공</span><b>${ng.toLocaleString()}</b><span class="tt">${RANKS[r][1]}</span><span class="tk">${RANKS[r][2]}</span></div>
     <div class="bar"><i style="width:${nx?Math.min(100,(ng-RANKS[r][0])/(nx[0]-RANKS[r][0])*100):100}%"></i></div>
-    <div class="nx">${nx?`다음 칭호 ${nx[1]} ${nx[2]}까지 내공 ${(nx[0]-ng).toLocaleString()} · 단어 1개 = 내공 1, 회화 초식 1개 = 내공 5`:'최고 경지에 올랐어요!'}</div>
+    <div class="nx">${nx?`<span class="nw">다음 칭호 ${nx[1]} ${nx[2]}까지</span> <span class="nw">내공 ${(nx[0]-ng).toLocaleString()}</span> · <span class="nw">단어 1개 = 내공 1,</span> <span class="nw">회화 초식 1개 = 내공 5</span>`:'최고 경지에 올랐어요!'}</div>
   </div></section>
   <div class="g2">
-    <article class="mp"><div class="mh"><span class="mz">秘</span><div><h3>HSK 단어 비급</h3><div class="ms">신HSK 1~4급 필수 단어 · 한국 한자 훈음 풀이</div></div></div>
+    <article class="mp"><div class="mh"><span class="mz">秘</span><div><h3>HSK 단어 비급</h3><div class="ms"><span class="nw">신HSK 1~4급 필수 단어</span> · <span class="nw">한국 한자 훈음 풀이</span></div></div></div>
       <div class="stat"><b>${wd.toLocaleString()}</b> / ${WD.length.toLocaleString()} 단어 습득</div>
       <div class="lvbars">${per.map(([L,t,d])=>`<div><span>${['','入門','修練','高手','宗師'][L]}</span><span class="bar"><i style="width:${d/t*100}%"></i></span><span>${L}급 ${d}/${t}</span></div>`).join('')}</div>
       <div class="acts2"><a class="btn primary" href="#words">단어장 펼치기</a><a class="btn" href="#words-train">카드 수련</a><a class="btn" href="#words-duel">퀴즈 대련</a></div></article>
-    <article class="mp"><div class="mh"><span class="mz">話</span><div><h3>생활회화 100초식</h3><div class="ms">식당·쇼핑·교통·호텔·병원 등 100가지 상황</div></div></div>
+    <article class="mp"><div class="mh"><span class="mz">話</span><div><h3>생활회화 100초식</h3><div class="ms"><span class="nw">식당·쇼핑·교통·호텔·병원 등</span> <span class="nw">100가지 상황</span></div></div></div>
       <div class="stat"><b>${td}</b> / ${TD.length} 초식 습득</div>
       <div class="bar"><i style="width:${td/TD.length*100}%"></i></div>
-      <div class="ms">${[...new Set(TD.map(s=>s[0]))].join(' · ')}</div>
+      <div class="ms">${[...new Set(TD.map(s=>s[0]))].map(c=>'<span class="nw">'+c+'</span>').join(' · ')}</div>
       <div class="acts2"><a class="btn primary" href="#talk">초식 펼치기</a><button class="btn" data-open-talk="${ti}">오늘의 초식 열기</button></div></article>
   </div>
   <div class="g2">
     <article class="mp"><div class="tt2">오늘의 한 단어 · ${w.lv}급</div>
-      <div class="tw"><span class="twz">${ESC(w.s)}</span><div><div class="twp">${ESC(w.p)} · ${ESC(w.h)}</div><div class="twm">${ESC(w.k)}</div><div class="twh">${ESC(w.t)} ${ESC(w.r)} — ${w.c.map(c=>ESC(c[1]+' '+c[2])).join(', ')}</div></div></div>
+      <div class="tw"><span class="twz">${ESC(w.s)}</span><div><div class="twp">${ESC(w.p)}</div><div class="twm">${ESC(w.k)}</div><div class="twh">${ESC(w.t)} ${ESC(w.r)} — ${w.c.map(c=>'<span class="nw">'+ESC(c[1]+' '+c[2])+'</span>').join(', ')}</div></div></div>
       <div class="twx">${ESC(w.ex)}</div><div class="twk">${ESC(w.ek)}</div>
       <div class="acts2"><button class="btn" data-say="${ESC(w.s)}">🔊 듣기</button><button class="btn" data-detail="${w.i}">자세히</button><button class="btn jade" data-got="${w.i}">외웠다 ✓</button></div></article>
     <article class="mp"><div class="tt2">오늘의 초식 · 第${ti+1}式 · ${ESC(ts[0])}</div><h3>${ESC(ts[1])}</h3>
